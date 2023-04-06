@@ -10,7 +10,7 @@ pub struct InitializePool<'info> {
         seeds = [
             b"swap_pool".as_ref(),
             authority.key().as_ref(),
-            token_a_mint.key().as_ref(),
+            // token_a_mint.key().as_ref(),
             token_b_mint.key().as_ref(),
         ],
         bump,
@@ -23,29 +23,29 @@ pub struct InitializePool<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
-    #[account(mut)]
-    pub token_a_mint: Account<'info, Mint>,
+    // #[account(mut)]
+    // pub token_a_mint: Account<'info, Mint>,
     #[account(mut)]
     pub token_b_mint: Account<'info, Mint>,
 
-    #[account(mut)]
-    pub token_a_account: Account<'info, TokenAccount>,
+    // #[account(mut)]
+    // pub token_a_account: Account<'info, TokenAccount>,
     #[account(mut)]
     pub token_b_account: Account<'info, TokenAccount>,
-
-    // #[account(mut)]
-    // pub destination: Account<'info, TokenAccount>,
 
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
-pub struct FundPool<'info> {
-    #[account(
-        mut,
-    )]
-    pub swap_pool: Account<'info, SwapPool>,
+pub struct Swap<'info> {
+    #[account(mut)]
+    pub swap_pool: AccountInfo<'info>,
 
-    pub authority: Signer<'info>,
+    #[account(mut)]
+    pub user_token_b_account: Account<'info, TokenAccount>,
+
+    pub user: Signer<'info>,
+
+    pub system_program: Program<'info, System>,
 }
