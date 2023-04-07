@@ -26,13 +26,10 @@ interface IProps {
 
 const PoolCard: React.FC<IProps> = ({ pool }) => {
   const [mintData, setMintData] = useState<Mint>();
+  const [poolBalance, setPoolBalance] = useState<any>({});
   const [solAmount, setSolAmount] = useState("0");
   const [fundAmount, setFundAmount] = useState("0");
   const { publicKey, tokenMint, tokenAccount, solToTokenRate } = pool;
-  console.log(
-    "Log ~ file: PoolCard.tsx:27 ~ tokenAccount:",
-    tokenAccount.toString()
-  );
 
   const wallet = useWallet();
 
@@ -95,7 +92,7 @@ const PoolCard: React.FC<IProps> = ({ pool }) => {
           tokenMint, // mint
           tokenAccount, // to
           wallet.publicKey, // from's owner
-          parseFloat(fundAmount) * (Math.pow(10, mintData?.decimals || 0)), // amount
+          parseFloat(fundAmount) * Math.pow(10, mintData?.decimals || 0), // amount
           mintData?.decimals || 0 // decimals
         )
       );
@@ -114,50 +111,33 @@ const PoolCard: React.FC<IProps> = ({ pool }) => {
     handleGetMint();
   }, [tokenMint]);
 
+  useEffect(() => {
+    const getPoolBalance = async () => {
+      if (publicKey && tokenAccount) {
+        const {
+          value: { amount, decimals = 0 },
+        } = await connection.getTokenAccountBalance(tokenAccount);
+        const solBalance = await connection.getBalance(publicKey);
+        const token = parseFloat(amount) / Math.pow(10, decimals);
+        const sol = solBalance / Math.pow(10, 9);
+        setPoolBalance({ token, sol });
+      }
+    };
+    getPoolBalance();
+  }, [publicKey, tokenAccount]);
+
   return (
     <div>
       <h5>Mint: {shortenAddress(tokenMint.toString())}</h5>
       <p>
         Price:{" "}
-        {1 / (solToTokenRate.toNumber() / Math.pow(10, mintData?.decimals || 0))} SOL
+        {1 /
+          (solToTokenRate.toNumber() /
+            Math.pow(10, mintData?.decimals || 0))}{" "}
+        SOL
       </p>
-
-      <div>
-        <label
-          htmlFor="solAmount"
-          className="block text-sm font-medium leading-6 text-gray-900"
-        >
-          From (SOL):
-        </label>
-        <div className="mt-2">
-          <input
-            type="text"
-            name="solAmount"
-            id="solAmount"
-            className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-            placeholder="Token per SOL"
-            value={solAmount}
-            onChange={(e) => setSolAmount(e.target.value)}
-          />
-        </div>
-      </div>
-
-      <div>
-        <div>To (Pool Token):</div>
-        <div className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-          {(parseFloat(solAmount) * solToTokenRate.toNumber()) /
-            Math.pow(10, mintData?.decimals || 0)}
-        </div>
-      </div>
-
-      <button
-        onClick={onSwap}
-        className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-      >
-        Swap
-      </button>
-
-      <hr />
+      <p>SOL balance: {poolBalance.sol} SOL</p>
+      <p>Token balance: {poolBalance.token}</p>
 
       <div>
         <label
@@ -171,7 +151,7 @@ const PoolCard: React.FC<IProps> = ({ pool }) => {
             type="text"
             name="tokenAmount"
             id="tokenAmount"
-            className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+            className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 pl-2"
             placeholder="Token per SOL"
             value={fundAmount}
             onChange={(e) => setFundAmount(e.target.value)}
@@ -184,6 +164,44 @@ const PoolCard: React.FC<IProps> = ({ pool }) => {
           Fund
         </button>
       </div>
+
+      <hr className="my-2" />
+
+      <h3>Swap</h3>
+      <div>
+        <label
+          htmlFor="solAmount"
+          className="block text-sm font-medium leading-6 text-gray-900"
+        >
+          From (SOL):
+        </label>
+        <div className="mt-2">
+          <input
+            type="text"
+            name="solAmount"
+            id="solAmount"
+            className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 pl-2"
+            placeholder="Token per SOL"
+            value={solAmount}
+            onChange={(e) => setSolAmount(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div>
+        <div>To (Pool Token):</div>
+        <div className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 pl-2">
+          {(parseFloat(solAmount) * solToTokenRate.toNumber()) /
+            Math.pow(10, mintData?.decimals || 0)}
+        </div>
+      </div>
+
+      <button
+        onClick={onSwap}
+        className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+      >
+        Swap
+      </button>
     </div>
   );
 };
