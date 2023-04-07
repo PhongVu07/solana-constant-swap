@@ -6,8 +6,6 @@ pub mod processor;
 pub use processor::*;
 pub mod instructions;
 pub use instructions::*;
-pub mod errors;
-pub use errors::*;
 
 declare_id!("9TAK4Mjf9HXAAjtQqr4gkzA7nbbTikWMVK4zXoKZTTFC");
 
@@ -15,8 +13,12 @@ declare_id!("9TAK4Mjf9HXAAjtQqr4gkzA7nbbTikWMVK4zXoKZTTFC");
 pub mod constant_swap {
     use super::*;
 
-    pub fn initialize_pool(ctx: Context<InitializePool>, token_b_price: u64) -> Result<()> {
-        processor::initialize_pool(ctx, token_b_price)
+    pub fn initialize_pool(ctx: Context<InitializePool>, sol_to_token_rate: u64) -> Result<()> {
+        processor::initialize_pool(ctx, sol_to_token_rate)
+    }
+
+    pub fn swap_sol_for_token(ctx: Context<Swap>, sol_amount: u64, bump: u8) -> Result<()> {
+        processor::swap_sol_for_token(ctx, sol_amount, bump)
     }
 }
 

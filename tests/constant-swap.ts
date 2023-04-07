@@ -1,16 +1,9 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
-import { Keypair, PublicKey, Connection } from "@solana/web3.js";
+import { Keypair, PublicKey } from "@solana/web3.js";
 import {
   createMint,
-  createAccount,
-  getAccount,
-  getOrCreateAssociatedTokenAccount,
-  transfer,
   mintTo,
-  TOKEN_PROGRAM_ID,
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-  NATIVE_MINT,
   getAssociatedTokenAddress,
   createAssociatedTokenAccountInstruction,
 } from "@solana/spl-token";
@@ -20,82 +13,138 @@ import { ConstantSwap } from "../target/types/constant_swap";
 import keypair from "./test-keypair.json";
 
 const utf8 = anchor.utils.bytes.utf8;
-const TOKEN_B_DECIMAL = 3
+const TOKEN_DECIMAL = 3;
+const SOL_TO_TOKEN_RATE = 10;
 
 describe("constant-swap", () => {
-  const provider =  anchor.AnchorProvider.env();
+  const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 
   const program = anchor.workspace.ConstantSwap as Program<ConstantSwap>;
   const wallet = Keypair.fromSecretKey(Uint8Array.from(keypair));
 
-  // let tokenAMint: PublicKey = NATIVE_MINT;
-  let tokenBMint: PublicKey;
+  let tokenMint: PublicKey;
+  let swapPool: PublicKey;
+  let tokenAccount: PublicKey;
+  let poolSigner: PublicKey;
+  let bump: number;
 
   before(async () => {
-    tokenBMint = await createMint(
+    tokenMint = await createMint(
       provider.connection,
       wallet,
       wallet.publicKey,
       wallet.publicKey,
-      TOKEN_B_DECIMAL
+      TOKEN_DECIMAL
     );
   });
 
   it("Initialize pool", async () => {
-    const [swapPool] = anchor.web3.PublicKey.findProgramAddressSync(
+    const [_swapPool] = anchor.web3.PublicKey.findProgramAddressSync(
       [
         utf8.encode("swap_pool"),
         wallet.publicKey.toBuffer(),
-        // tokenAMint.toBuffer(),
-        tokenBMint.toBuffer(),
+        tokenMint.toBuffer(),
       ],
       program.programId
     );
-    // const tokenAAccount = await getAssociatedTokenAddress(tokenAMint, swapPool, true);
-    const tokenBAccount = await getAssociatedTokenAddress(tokenBMint, swapPool, true);
+    swapPool = _swapPool;
+    const [_poolSigner, _bump] = anchor.web3.PublicKey.findProgramAddressSync(
+      [swapPool.toBuffer()],
+      program.programId
+    );
+    poolSigner = _poolSigner;
+    bump = _bump;
+    tokenAccount = await getAssociatedTokenAddress(
+      tokenMint,
+      poolSigner,
+      true
+    );
 
     const accounts = {
       swapPool,
       authority: wallet.publicKey,
-      // tokenAMint,
-      tokenBMint,
-      // tokenAAccount,
-      tokenBAccount,
+      tokenMint,
+      tokenAccount,
     };
 
     const createAccountsInstructions = [
-      // createAssociatedTokenAccountInstruction(
-      //   wallet.publicKey,
-      //   tokenAAccount,
-      //   swapPool,
-      //   tokenAMint
-      // ),
       createAssociatedTokenAccountInstruction(
         wallet.publicKey,
-        tokenBAccount,
-        swapPool,
-        tokenBMint
+        tokenAccount,
+        poolSigner,
+        tokenMint
       ),
     ];
     const tx = await program.methods
-      .initializePool(new anchor.BN(0.1 * Math.pow(10, TOKEN_B_DECIMAL)))
+      .initializePool(
+        new anchor.BN(SOL_TO_TOKEN_RATE * Math.pow(10, TOKEN_DECIMAL))
+      )
       .accounts(accounts)
       .preInstructions(createAccountsInstructions)
       .signers([wallet])
       .rpc();
-    console.log("tx:", tx)
+    console.log("Create pool tx:", tx);
 
-    await mintTo(provider.connection, wallet, tokenBMint, tokenBAccount, wallet, 1000 * Math.pow(10, TOKEN_B_DECIMAL))
+    await mintTo(
+      provider.connection,
+      wallet,
+      tokenMint,
+      tokenAccount,
+      wallet,
+      1000 * Math.pow(10, TOKEN_DECIMAL)
+    );
 
-    const swapPoolAccount = await program.account.swapPool.fetch(swapPool)
+    const swapPoolAccount = await program.account.swapPool.fetch(swapPool);
 
-    assert.equal(swapPoolAccount.tokenBPrice.toString(), "100")
-    assert.equal(swapPoolAccount.authority.toString(), wallet.publicKey.toString())
-    // assert.equal(swapPoolAccount.tokenAAccount.toString(), tokenAAccount.toString())
-    assert.equal(swapPoolAccount.tokenBAccount.toString(), tokenBAccount.toString())
-    // assert.equal(swapPoolAccount.tokenAMint.toString(), tokenAMint.toString())
-    assert.equal(swapPoolAccount.tokenBMint.toString(), tokenBMint.toString())
+    assert.equal(swapPoolAccount.solToTokenRate.toString(), "10000");
+    assert.equal(
+      swapPoolAccount.authority.toString(),
+      wallet.publicKey.toString()
+    );
+    assert.equal(
+      swapPoolAccount.tokenAccount.toString(),
+      tokenAccount.toString()
+    );
+    assert.equal(swapPoolAccount.tokenMint.toString(), tokenMint.toString());
+  });
 
+  it("Swap SOL for token", async () => {
+    const userTokenAccount: PublicKey = await getAssociatedTokenAddress(
+      tokenMint,
+      wallet.publicKey
+    );
+    const createAccountsInstructions = [
+      createAssociatedTokenAccountInstruction(
+        wallet.publicKey,
+        userTokenAccount,
+        wallet.publicKey,
+        tokenMint
+      ),
+    ];
+
+    const accounts = {
+      swapPool,
+      tokenAccount,
+      poolSigner,
+      userTokenAccount,
+      user: wallet.publicKey,
+    };
+
+    const tx = await program.methods
+      .swapSolForToken(new anchor.BN(0.1 * Math.pow(10, 9)), bump)
+      .accounts(accounts)
+      .preInstructions(createAccountsInstructions)
+      .signers([wallet])
+      .rpc();
+    console.log("Swap tx:", tx);
+
+    const newUserTokenBalance =
+      await provider.connection.getTokenAccountBalance(userTokenAccount);
+
+    assert.equal(
+      parseFloat(newUserTokenBalance.value.amount),
+      0.1 * SOL_TO_TOKEN_RATE * Math.pow(10, TOKEN_DECIMAL)
+    );
   });
 });

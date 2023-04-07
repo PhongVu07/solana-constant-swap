@@ -10,8 +10,7 @@ pub struct InitializePool<'info> {
         seeds = [
             b"swap_pool".as_ref(),
             authority.key().as_ref(),
-            // token_a_mint.key().as_ref(),
-            token_b_mint.key().as_ref(),
+            token_mint.key().as_ref(),
         ],
         bump,
         payer = authority,
@@ -19,19 +18,15 @@ pub struct InitializePool<'info> {
     )]
     pub swap_pool: Account<'info, SwapPool>,
 
-    /// CHECK: no check
+    /// CHECK: no need to check
     #[account(mut)]
     pub authority: Signer<'info>,
 
-    // #[account(mut)]
-    // pub token_a_mint: Account<'info, Mint>,
     #[account(mut)]
-    pub token_b_mint: Account<'info, Mint>,
+    pub token_mint: Account<'info, Mint>,
 
-    // #[account(mut)]
-    // pub token_a_account: Account<'info, TokenAccount>,
     #[account(mut)]
-    pub token_b_account: Account<'info, TokenAccount>,
+    pub token_account: Account<'info, TokenAccount>,
 
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
@@ -39,13 +34,30 @@ pub struct InitializePool<'info> {
 
 #[derive(Accounts)]
 pub struct Swap<'info> {
-    #[account(mut)]
-    pub swap_pool: AccountInfo<'info>,
+    #[account(mut, has_one = token_account)]
+    pub swap_pool: Account<'info, SwapPool>,
 
-    #[account(mut)]
-    pub user_token_b_account: Account<'info, TokenAccount>,
+    #[account(
+        mut,
+        constraint = swap_pool.token_account == token_account.key(),
+        constraint = token_account.owner == pool_signer.key()
+    )]
+    pub token_account: Account<'info, TokenAccount>,
+
+    /// CHECK: No need to check
+    #[account(
+        seeds = [swap_pool.to_account_info().key().as_ref()],
+        bump,
+    )]
+    pub pool_signer: AccountInfo<'info>,
+
+    #[account(mut,
+        constraint = user_token_account.owner == user.key()
+    )]
+    pub user_token_account: Account<'info, TokenAccount>,
 
     pub user: Signer<'info>,
 
+    pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
