@@ -44,14 +44,17 @@ function App() {
           display: "flex",
           justifyContent: "center",
           marginTop: "100px",
+          // backgroundColor: "#512da8",
+          // width: "100px"
         }}
       >
-        <WalletMultiButton />
+        <WalletMultiButton className="text-white bg-indigo-800" />
       </div>
     );
   } else {
     return (
       <div className="App">
+        <h1 className="block text-lg font-medium leading-6 text-gray-900 text-center m-4">Network: Devnet</h1>
         <div className="grid grid-cols-3 gap-4">
           <div className="border-2 border-gray-400 rounded-sm p-2">
             <CreatePoolForm handleGetPools={handleGetPools}/>
