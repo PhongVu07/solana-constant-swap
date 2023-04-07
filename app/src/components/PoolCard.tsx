@@ -75,6 +75,7 @@ const PoolCard: React.FC<IProps> = ({ pool }) => {
         .accounts(accounts)
         .preInstructions(createAccountsInstructions)
         .rpc();
+      getPoolBalance()
       console.log("Log ~ file: PoolCard.tsx:63 ~ onSwap ~ tx:", tx);
     }
   };
@@ -97,6 +98,7 @@ const PoolCard: React.FC<IProps> = ({ pool }) => {
         )
       );
       const result = await wallet.sendTransaction(tx, connection);
+      getPoolBalance()
       console.log("response", result);
     }
   };
@@ -111,18 +113,18 @@ const PoolCard: React.FC<IProps> = ({ pool }) => {
     handleGetMint();
   }, [tokenMint]);
 
+  const getPoolBalance = async () => {
+    if (publicKey && tokenAccount) {
+      const {
+        value: { amount, decimals = 0 },
+      } = await connection.getTokenAccountBalance(tokenAccount);
+      const solBalance = await connection.getBalance(publicKey);
+      const token = parseFloat(amount) / Math.pow(10, decimals);
+      const sol = solBalance / Math.pow(10, 9);
+      setPoolBalance({ token, sol });
+    }
+  };
   useEffect(() => {
-    const getPoolBalance = async () => {
-      if (publicKey && tokenAccount) {
-        const {
-          value: { amount, decimals = 0 },
-        } = await connection.getTokenAccountBalance(tokenAccount);
-        const solBalance = await connection.getBalance(publicKey);
-        const token = parseFloat(amount) / Math.pow(10, decimals);
-        const sol = solBalance / Math.pow(10, 9);
-        setPoolBalance({ token, sol });
-      }
-    };
     getPoolBalance();
   }, [publicKey, tokenAccount]);
 
