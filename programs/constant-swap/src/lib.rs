@@ -6,8 +6,11 @@ pub mod processor;
 pub use processor::*;
 pub mod instructions;
 pub use instructions::*;
+pub mod error;
+pub use error::*;
 
-declare_id!("9TAK4Mjf9HXAAjtQqr4gkzA7nbbTikWMVK4zXoKZTTFC");
+
+declare_id!("9BdyJstDDVNPJS7PKzBQvCPKhtdEgBoQqVvFGH5rMkui");
 
 #[program]
 pub mod constant_swap {

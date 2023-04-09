@@ -2,14 +2,14 @@
 seeds = false
 skip-lint = false
 [programs.devnet]
-constant_swap = "9TAK4Mjf9HXAAjtQqr4gkzA7nbbTikWMVK4zXoKZTTFC"
+constant_swap = "9BdyJstDDVNPJS7PKzBQvCPKhtdEgBoQqVvFGH5rMkui"
 
 [registry]
 url = "https://anchor.projectserum.com"
 
 [provider]
 cluster = "devnet"
-wallet = "/Users/phongvu/.config/solana/phantom-3.json"
+wallet = "/Users/phongvu/.config/solana/phantom.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"

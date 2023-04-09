@@ -3,16 +3,20 @@ use anchor_lang::solana_program::log::sol_log_compute_units;
 use anchor_lang::system_program;
 
 use crate::instructions::*;
+use crate::error::*;
 
 const SOL_DECIMAL: u64 = 1_000_000_000;
 
 pub fn initialize_pool(ctx: Context<InitializePool>, sol_to_token_rate: u64) -> Result<()> {
     let swap_pool = &mut ctx.accounts.swap_pool;
 
+    if sol_to_token_rate == 0
+    {
+        return err!(SwapPoolError::SwapRateError);
+    }
+
     swap_pool.authority = ctx.accounts.authority.key();
-    // swap_pool.token_a_account = ctx.accounts.token_a_account.key();
     swap_pool.token_account = ctx.accounts.token_account.key();
-    // swap_pool.token_a_mint = ctx.accounts.token_a_mint.key();
     swap_pool.token_mint = ctx.accounts.token_mint.key();
     swap_pool.sol_to_token_rate = sol_to_token_rate;
 

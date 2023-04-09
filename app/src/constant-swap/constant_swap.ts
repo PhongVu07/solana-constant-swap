@@ -119,6 +119,13 @@ export type ConstantSwap = {
         ]
       }
     }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "SwapRateError",
+      "msg": "Rate must be greater than zero."
+    }
   ]
 };
 
@@ -242,6 +249,13 @@ export const IDL: ConstantSwap = {
           }
         ]
       }
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "SwapRateError",
+      "msg": "Rate must be greater than zero."
     }
   ]
 };

@@ -120,7 +120,14 @@
       }
     }
   ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "SwapRateError",
+      "msg": "Rate must be greater than zero."
+    }
+  ],
   "metadata": {
-    "address": "9TAK4Mjf9HXAAjtQqr4gkzA7nbbTikWMVK4zXoKZTTFC"
+    "address": "9BdyJstDDVNPJS7PKzBQvCPKhtdEgBoQqVvFGH5rMkui"
   }
 }
