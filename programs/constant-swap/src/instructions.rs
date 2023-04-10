@@ -18,7 +18,6 @@ pub struct InitializePool<'info> {
     )]
     pub swap_pool: Account<'info, SwapPool>,
 
-    /// CHECK: no need to check
     #[account(mut)]
     pub authority: Signer<'info>,
 
@@ -44,7 +43,7 @@ pub struct Swap<'info> {
     )]
     pub token_account: Account<'info, TokenAccount>,
 
-    /// CHECK: No need to check
+    /// CHECK: This program's PDA, therefore no need to check
     #[account(
         seeds = [swap_pool.to_account_info().key().as_ref()],
         bump,

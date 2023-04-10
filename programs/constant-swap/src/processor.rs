@@ -8,12 +8,9 @@ use crate::error::*;
 const SOL_DECIMAL: u64 = 1_000_000_000;
 
 pub fn initialize_pool(ctx: Context<InitializePool>, sol_to_token_rate: u64) -> Result<()> {
-    let swap_pool = &mut ctx.accounts.swap_pool;
+    require!(sol_to_token_rate.gt(&0), SwapPoolError::SwapRateError);
 
-    if sol_to_token_rate == 0
-    {
-        return err!(SwapPoolError::SwapRateError);
-    }
+    let swap_pool = &mut ctx.accounts.swap_pool;
 
     swap_pool.authority = ctx.accounts.authority.key();
     swap_pool.token_account = ctx.accounts.token_account.key();
@@ -26,6 +23,8 @@ pub fn initialize_pool(ctx: Context<InitializePool>, sol_to_token_rate: u64) -> 
 }
 
 pub fn swap_sol_for_token(ctx: Context<Swap>, sol_amount: u64, bump: u8) -> Result<()> {
+    require!(sol_amount.gt(&0), SwapPoolError::SwapAmountError);
+
     let swap_pool = &mut ctx.accounts.swap_pool;
 
     system_program::transfer(

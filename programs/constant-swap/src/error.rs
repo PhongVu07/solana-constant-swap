@@ -6,4 +6,6 @@ use {
 pub enum SwapPoolError {
     #[msg("Rate must be greater than zero.")]
     SwapRateError,
+    #[msg("Amount must be greater than zero.")]
+    SwapAmountError,
 }
